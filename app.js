@@ -33,7 +33,7 @@ app.use(
 			maxAge: 7 * 24 * 60 * 60 * 1000, // ms
 		},
 		secret: process.env.SECRET,
-		resave: true,
+		resave: false,
 		saveUninitialized: false,
 		store: new PrismaSessionStore(new PrismaClient(), {
 			checkPeriod: 2 * 60 * 1000, //ms
@@ -63,7 +63,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 passport.use(
 	new LocalStrategy(async (username, password, done) => {
+		console.log('local strat runs')
 		try {
+			console.log('local strat runs try')
+
 			const user = await db.findUser(username);
 			if (!user) {
 				return done(null, false, { message: "Incorrect username" });

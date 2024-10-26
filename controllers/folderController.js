@@ -6,14 +6,21 @@ const prisma = new PrismaClient();
 exports.getFolder = expressAsyncHandler(async (req, res, next) => {
 	const folders = await db.findFolders();
 	if (folders) {
-		return res.json({ folders });
+		return res.json({ folders: folders });
 	} else {
 		return res.json({ message: "No folders found" });
 	}
 });
 
+exports.getOneFolder = expressAsyncHandler(async (req, res, next) => {
+	const folderId = parseInt(req.params.id);
+	const folder = await db.findFolder(folderId);
+    res.json(folder)
+});
+
 exports.postFolder = expressAsyncHandler(async (req, res, next) => {
 	const folder = await db.createFolder(req.body.name);
+	res.json(folder);
 });
 
 exports.updateFolder = expressAsyncHandler(async (req, res, next) => {
@@ -34,7 +41,6 @@ exports.updateFolder = expressAsyncHandler(async (req, res, next) => {
 exports.deleteFolder = expressAsyncHandler(async (req, res, next) => {
 	const parsedId = parseInt(req.params.id);
 	const folderToDelete = await db.deleteFolder(parsedId);
-	// console.log(folderToDelete, 'folder to delte')
 	if (folderToDelete) {
 		res.json(folderToDelete);
 	} else {

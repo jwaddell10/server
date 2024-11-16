@@ -18,9 +18,10 @@ router.post("/log-in", function (req, res, next) {
 			return next(err);
 		}
 		if (!user) {
-			return res.json("Login failed");
+			return res.json(info.message);
 		}
-		// NEED TO CALL req.login()!!!
+		// console.log(re, 'req user login')
+
 		req.login(user, function (err) {
 			if (err) {
 				return next(err);
@@ -30,6 +31,8 @@ router.post("/log-in", function (req, res, next) {
 				sessionID: req.sessionID,
 			});
 		});
+		console.log(req.user, 'requser in login', req.session, 'req session login', req.session.passport, 'req session passport')
+
 	})(req, res, next);
 });
 

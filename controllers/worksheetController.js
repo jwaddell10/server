@@ -1,5 +1,6 @@
 const expressAsyncHandler = require("express-async-handler");
 const db = require("../db/queries.js");
+const express = require("express");
 const cloudinary = require("cloudinary").v2;
 
 exports.getDemographics = expressAsyncHandler(async (req, res, next) => {
@@ -29,7 +30,15 @@ exports.getWorksheets = expressAsyncHandler(async (req, res, next) => {
 });
 
 exports.getOneWorksheet = expressAsyncHandler(async (req, res, next) => {
-	console.log(req.body, "this is req get one");
+	const worksheet = await db.findWorksheet(parseInt(req.params.id));
+
+	if (!worksheet) {
+		res.status(404).json({
+			message: "Server error has occurred. Please try again later",
+		});
+	}
+
+	res.json(worksheet);
 });
 
 exports.uploadWorksheet = expressAsyncHandler(async (req, res, next) => {
@@ -54,4 +63,25 @@ exports.uploadWorksheet = expressAsyncHandler(async (req, res, next) => {
 	// .catch((error) => {
 	//     console.log(error);
 	// });
+});
+
+exports.deleteWorksheet = expressAsyncHandler(async (req, res, next) => {
+	// const parsedId = parseInt(req.params.id);
+	const deletedWorksheet = await db.deleteWorksheet(parseInt(req.params.id));
+
+	if (deletedWorksheet) {
+		res.json(deletedWorksheet);
+	} else return res.status(400).json({ message: "Error occurred" });
+});
+
+exports.updateWorksheet = expressAsyncHandler(async (req, res, next) => {
+	const worksheetToUpdate = await db.updateWorksheet(
+		parseInt(req.params.id),
+		req.body.title
+	);
+	if (!worksheetToUpdate) {
+		res.status(404).json({ message: "Server error. Try again later" });
+	}
+
+	res.json(worksheetToUpdate);
 });

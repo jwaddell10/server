@@ -1,7 +1,7 @@
 var createError = require("http-errors");
 var path = require("path");
 var logger = require("morgan");
-var cors = require("cors");
+const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 // var GoogleStrategy = require("passport-google-oauth2").Strategy;
@@ -32,7 +32,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(
 	expressSession({
 		cookie: {
-			maxAge: 7 * 24 * 60 * 60 * 1000, // ms
+			secure: false,
+			maxAge: 3600000, // ms
 		},
 		secret: process.env.SECRET,
 		resave: false,
@@ -65,7 +66,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 passport.use(
 	new LocalStrategy(async (username, password, done) => {
-		// console.log("passport use runs")
+		console.log("LocalStrategy is being called");
 		try {
 			const user = await db.findUser(username);
 			if (!user) {
@@ -85,21 +86,32 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-	console.log("serialize user runs");
-	done(null, user);
+    console.log('serializeUser called with user:', user);
+    done(null, user.id);
 });
 
-passport.deserializeUser(async function (id, done) {
+passport.deserializeUser(async (id, done) => {
+	console.log('deserializeUser called with id:', id);
 	try {
-		const user = await db.findUser(id);
-		if (!user) {
-			return done(null, false);
-		}
-		done(null, user);
+	  const user = await db.findUser(id);
+	  if (!user) {
+		console.log('User not found');
+		return done(null, false);
+	  }
+	  console.log('User found:', user);
+	  done(null, user);
 	} catch (error) {
-		done(error);
+	  console.log('Error in deserializeUser:', error);
+	  done(error);
 	}
-});
+  });
+
+
+const ensureAuthenticated = function (req, res, next) {
+	// console.log(req, 'this is req ensure auth')
+	if (req.isAuthenticated()) return next();
+	else res.json({ message: "unable to authenticate" });
+  };
 
 // configurePassport(passport);
 app.use(express.urlencoded({ extended: false }));

@@ -1,21 +1,9 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs");
-const { session } = require("passport");
+const { session, authorize } = require("passport");
 
 module.exports = {
-	findUser: async (username) => {
-		try {
-			const user = await prisma.user.findUnique({
-				where: {
-					username: username,
-				},
-			});
-			return user;
-		} catch (error) {
-			throw new Error(error);
-		}
-	},
 	createUser: async (username, password) => {
 		try {
 			const securePassword = await bcrypt.hash(password, 10);
@@ -27,6 +15,20 @@ module.exports = {
 			});
 			return user;
 		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
+	findUser: async (username) => {
+		try {
+			const user = await prisma.user.findUnique({
+				where: {
+					username: username,
+				},
+			});
+			return user;
+		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
@@ -35,6 +37,7 @@ module.exports = {
 			const demographics = await prisma.demographic.findMany();
 			return demographics;
 		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
@@ -43,6 +46,35 @@ module.exports = {
 			const topics = await prisma.topic.findMany();
 			return topics;
 		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
+	createFolder: async (user, title, folderId) => {
+		try {
+			const folderData = {
+				title: title,
+				createdAt: new Date(),
+				authorId: user.id,
+			};
+			// const folder = await prisma.folder.create({
+			// 	data: {
+			// 		title: title,
+			// 		createdAt: new Date(),
+			// 		authorId: user.id,
+			// 	},
+			// });
+
+			if (folderId !== null) {
+				folderData.folderId = folderId;
+			}
+
+			const folder = await prisma.folder.create({
+				data: folderData,
+			});
+			return folder;
+		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
@@ -52,10 +84,14 @@ module.exports = {
 				where: {
 					id,
 				},
+				include: {
+					worksheet: true,
+					children: true,
+				},
 			});
-			console.log(folder, "folder in find");
 			return folder;
 		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
@@ -64,24 +100,46 @@ module.exports = {
 			const folders = await prisma.folder.findMany();
 			return folders;
 		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
-	createFolder: async (title) => {
+	updateFolder: async (id, title) => {
 		try {
-			const folder = await prisma.folder.create({
+			const updatedFolder = await prisma.folder.update({
+				where: {
+					id: id,
+				},
 				data: {
 					title: title,
-					createdAt: new Date(),
 				},
 			});
-			return folder;
+			return updatedFolder;
 		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
+	deleteFolderWithWorksheets: async (id) => {
+		try {
+			const deletedFolderWithWorksheets = await prisma.folder.update({
+				where: {
+					id: id,
+				},
+				data: {
+					worksheets: {
+						set: [],
+					},
+				},
+			});
+		} catch (error) {
+			console.log(error, "error in delete folder with worksheets");
 			throw new Error(error);
 		}
 	},
 	deleteFolder: async (id) => {
 		try {
+			// console.log(id, 'delete folder runs id')
 			const deletedFolder = await prisma.folder.delete({
 				where: {
 					id,
@@ -89,35 +147,85 @@ module.exports = {
 			});
 			return deletedFolder;
 		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
+	createWorksheet: async (user, title, folderId, imgUrl) => {
+		//if folder, place in folder?
+		try {
+			const worksheetData = {
+				authorId: user.id,
+				title: title,
+				createdAt: new Date(),
+				imgUrl: imgUrl,
+			};
+			console.log(worksheetData, 'worksheet data in creat')
+
+			if (folderId) {
+				worksheetData.folderId = folderId;
+			}
+
+			const worksheet = await prisma.worksheet.create({
+				data: worksheetData,
+			});
+			return worksheet;
+		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
+	findWorksheet: async (id) => {
+		try {
+			const worksheet = await prisma.worksheet.findUnique({
+				where: {
+					id: id,
+				},
+			});
+			return worksheet;
+		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
 	findWorksheets: async () => {
 		try {
-			const worksheets = await prisma.worksheets.findMany();
-			return worksheets
+			const worksheets = await prisma.worksheet.findMany();
+			return worksheets;
 		} catch (error) {
+			console.log(error, "error");
 			throw new Error(error);
 		}
 	},
-	createWorksheet: async (user, title) => {
+	updateWorksheet: async (id, title) => {
 		try {
-			const worksheet = await prisma.worksheets.create({
+			const updatedWorksheet = await prisma.worksheet.update({
+				where: {
+					id: id,
+				},
 				data: {
-					// author: user,
 					title: title,
-					createdAt: new Date(),
 				},
 			});
-			return worksheet;
+			return updatedWorksheet;
 		} catch (error) {
+			console.log(error, "error in update worksheet");
 			throw new Error(error);
 		}
 	},
-
-	// author      User          @relation(fields: [id], references: [id])
-	// // topics      Topic[]       @relation
-	// Demographic Demographic[]
-	// createdAt   DateTime      @db.Date
-	// Folder      Folder[]
+	deleteWorksheet: async (id) => {
+		console.log("delete runs");
+		try {
+			console.log(id, "id here");
+			const worksheetToDelete = await prisma.worksheet.delete({
+				where: {
+					id: id,
+				},
+			});
+			return worksheetToDelete;
+		} catch (error) {
+			console.log(error, "error");
+			throw new Error(error);
+		}
+	},
 };

@@ -13,40 +13,29 @@ exports.getFolder = expressAsyncHandler(async (req, res, next) => {
 });
 
 exports.getOneFolder = expressAsyncHandler(async (req, res, next) => {
-	const folderId = parseInt(req.params.id);
-	// const folder = await db.findFolder()
-	const folderWithWorksheets = await prisma.folder.findMany({
-		where: { id: folderId },
-		include: {
-			Worksheets: true,
-		},
-	});
-	res.json(folderWithWorksheets)
+	const folder = await db.findFolder(parseInt(req.params.id))
+	res.json(folder);
 });
 
 exports.postFolder = expressAsyncHandler(async (req, res, next) => {
-	const folder = await db.createFolder(req.body.name);
+	console.log(req.body, "req in postfolder");
+	const user = await db.findUser(req.body.username);
+	const folder = await db.createFolder(user, req.body.formData.name, parseInt(req.body.folderId));
 	res.json(folder);
 });
 
 exports.updateFolder = expressAsyncHandler(async (req, res, next) => {
-	const postId = parseInt(req.params.id);
-	const { title } = req.body;
-	const updatedFolder = await prisma.folder.update({
-		where: {
-			id: postId,
-		},
-		data: {
-			title: title,
-		},
-	});
+	const title = req.body.title;
+	const updatedFolder = await db.updateFolder(parseInt(req.params.id), title);
 
 	res.json(updatedFolder);
 });
 
 exports.deleteFolder = expressAsyncHandler(async (req, res, next) => {
+	console.log('delete folder runs')
 	const parsedId = parseInt(req.params.id);
 	const folderToDelete = await db.deleteFolder(parsedId);
+	console.log(folderToDelete, "foldertodelete");
 	if (folderToDelete) {
 		res.json(folderToDelete);
 	} else {

@@ -17,7 +17,10 @@ async function verifyToken(req, res, next) {
 }
 
 function verifyJWT(token) {
-	return jwt.verify(token, process.env.JWT_SECRET);
+	const verifiedUser = jwt.verify(token, process.env.JWT_SECRET);
+
+    console.log(verifiedUser, 'verified user')
+    return verifiedUser;
 }
 
 module.exports = { verifyToken, verifyJWT };

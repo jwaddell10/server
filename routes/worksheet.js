@@ -46,7 +46,39 @@ router.post(
 				return res.status(400).json({ message: "No file uploaded" });
 			}
 
-			// Check if the file is a JPG
+			if (req.file.mimetype === "application/pdf") {
+				const result = await new Promise((resolve, reject) => {
+					const uploadStream = cloudinary.uploader.upload_stream(
+						{
+							folder: "worksheets",
+							resource_type: "auto",
+						},
+						(error, result) => {
+							if (error) reject(error);
+							else resolve(result);
+						}
+					);
+
+					const readableStream = new Readable();
+					readableStream.push(pdfBuffer);
+					readableStream.push(null);
+					readableStream.pipe(uploadStream);
+				});
+
+				// TODO: Save worksheet details to database
+				const worksheet = await db.createWorksheet(
+					verifiedUser.user,
+					req.body.title,
+					parseInt(req.body.folderId),
+					result.secure_url
+				);
+
+				res.json({
+					message: "File converted to PDF and uploaded successfully",
+					url: result.secure_url,
+				});
+			} 
+
 			if (req.file.mimetype !== "image/jpeg") {
 				return res
 					.status(400)
